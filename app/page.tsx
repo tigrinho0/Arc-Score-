@@ -37,10 +37,17 @@ export default function Home() {
                 )}
                 {walletError && (
                   <div className="rounded-3xl border border-destructive/40 bg-destructive/10 text-destructive p-6">
-                    {walletError}
+                    <p className="font-semibold mb-2">Erro ao carregar dados da carteira</p>
+                    <p className="text-sm">{walletError}</p>
+                    <p className="text-xs mt-2 text-muted-foreground">Verifique se o backend está rodando em http://localhost:3001</p>
                   </div>
                 )}
-                {walletData && <ArcScoreHero data={walletData} />}
+                {!walletLoading && !walletError && walletData && <ArcScoreHero data={walletData} />}
+                {!walletLoading && !walletError && !walletData && (
+                  <div className="rounded-3xl border border-border bg-card/50 p-8 text-center">
+                    <p className="text-muted-foreground">Nenhum dado disponível para esta carteira</p>
+                  </div>
+                )}
 
                 {/* Supporting Metrics - Secondary */}
                 <MetricsGrid walletAddress={walletAddress} />

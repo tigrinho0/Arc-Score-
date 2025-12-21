@@ -18,7 +18,16 @@ export function useWalletData(address: string | null) {
       try {
         setLoading(true);
         setError(null);
+        console.log('Fetching wallet data for address:', address);
         const result = await api.getWalletOverview(address);
+        console.log('Wallet data received:', result);
+        console.log('ArcScore:', result?.arcScore);
+        
+        // Ensure arcScore is a number
+        if (result) {
+          result.arcScore = typeof result.arcScore === 'number' ? result.arcScore : parseFloat(result.arcScore as any) || 0;
+        }
+        
         setData(result);
       } catch (err: any) {
         console.error('Error fetching wallet data:', err);
@@ -34,11 +43,3 @@ export function useWalletData(address: string | null) {
 
   return { data, loading, error };
 }
-
-
-
-
-
-
-
-

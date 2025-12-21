@@ -14,9 +14,11 @@ const TIERS = [
 ]
 
 export function ArcScoreHero({ data }: ArcScoreHeroProps) {
+  // Ensure arcScore is always a number
+  const arcScore = typeof data.arcScore === 'number' ? data.arcScore : (parseFloat(String(data.arcScore || 0)) || 0);
 
   const { tier, nextTier, pointsToNext, progressPercent, reputationText } = useMemo(() => {
-    const score = data.arcScore ?? 0
+    const score = arcScore
     const tier = TIERS.find((t) => score >= t.min && (score < t.max || t.max === Infinity)) ?? TIERS[0]
     const nextTierIndex = TIERS.indexOf(tier) + 1
     const nextTier = TIERS[nextTierIndex] ?? null
@@ -41,7 +43,7 @@ export function ArcScoreHero({ data }: ArcScoreHeroProps) {
       progressPercent: Math.round(progressWithinTier * 100),
       reputationText,
     }
-  }, [data.arcScore])
+  }, [arcScore])
 
 
   return (
@@ -60,7 +62,7 @@ export function ArcScoreHero({ data }: ArcScoreHeroProps) {
           {/* Score Display */}
           <div className="flex items-end gap-6">
             <div className="text-7xl md:text-8xl font-black tracking-tight text-foreground drop-shadow-sm animate-in fade-in duration-500">
-              {Math.round(data.arcScore || 0)}
+              {Math.round(arcScore)}
             </div>
             <div className="space-y-2 pb-2">
               <div className="text-muted-foreground text-sm font-medium">{reputationText}</div>
@@ -77,7 +79,7 @@ export function ArcScoreHero({ data }: ArcScoreHeroProps) {
             <div className="flex items-center justify-between text-sm font-medium text-muted-foreground">
               <span>Progress {tier.ptName}</span>
               <span className="text-foreground font-semibold">
-                {Math.round(data.arcScore)} {nextTier ? `/ ${nextTier.min}` : ""}
+                {Math.round(arcScore)} {nextTier ? `/ ${nextTier.min}` : ""}
               </span>
             </div>
             <div className="h-4 md:h-5 w-full rounded-full bg-white/20 border border-white/25 overflow-hidden shadow-[0_0_0_1px_rgba(255,255,255,0.12)]">
