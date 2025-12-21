@@ -8,14 +8,25 @@ interface MetricsGridProps {
   walletAddress: string
 }
 
-// Helper function to format wei to USDC
+// Helper function to format wei to ETH
 function formatWeiToEth(wei: string | number): string {
   try {
     const weiBigInt = BigInt(wei || "0")
-    const usdc = Number(weiBigInt) / 1e18
-    return usdc.toFixed(4)
+    const eth = Number(weiBigInt) / 1e18
+    return eth.toFixed(4)
   } catch {
     return "0.0000"
+  }
+}
+
+// Helper function to format USDC (6 decimals)
+function formatUsdc(amount: string | number): string {
+  try {
+    const amountBigInt = BigInt(amount || "0")
+    const usdc = Number(amountBigInt) / 1e6
+    return usdc.toFixed(2)
+  } catch {
+    return "0.00"
   }
 }
 
@@ -51,8 +62,8 @@ export function MetricsGrid({ walletAddress }: MetricsGridProps) {
     ? Math.floor((new Date().getTime() - new Date(data.firstSeenAt).getTime()) / (1000 * 60 * 60 * 24))
     : 0
 
-  // Format balance (assuming 0 for now, can be updated when backend provides it)
-  const balanceDisplay = "0.0000" // formatWeiToEth(data.balance?.native || "0")
+  // Format USDC balance from backend (USDC has 6 decimals)
+  const balanceDisplay = formatUsdc(data.balance?.usdc || "0")
 
   const metrics = [
     {
@@ -74,7 +85,7 @@ export function MetricsGrid({ walletAddress }: MetricsGridProps) {
     {
       title: "Wallet Balance",
       value: `${balanceDisplay} USDC`,
-      subtitle: "Native balance on Arc Network",
+      subtitle: "USDC balance on Arc Network",
       icon: Wallet,
       trend: null,
       trendUp: null,

@@ -108,4 +108,78 @@ export class RpcService {
       return [];
     }
   }
+
+  async getBalance(address: string): Promise<string> {
+    try {
+      const balance = await this.provider.getBalance(address);
+      return balance.toString();
+    } catch (error) {
+      this.logger.error(`Error getting balance for ${address}: ${error.message}`);
+      return '0';
+    }
+  }
+
+  async getTokenBalance(tokenAddress: string, walletAddress: string): Promise<string> {
+    try {
+      this.logger.log(`Fetching token balance - Token: ${tokenAddress}, Wallet: ${walletAddress}`);
+      
+      // ERC-20 ABI minimal - only balanceOf function
+      const erc20Abi = [
+        'function balanceOf(address owner) view returns (uint256)',
+        'function decimals() view returns (uint8)',
+      ];
+
+      // Try with original addresses first, then checksummed
+      let contract;
+      try {
+        // First try with checksummed token address
+        const checksummedTokenAddress = ethers.getAddress(tokenAddress);
+        this.logger.log(`Using checksummed token address: ${checksummedTokenAddress}`);
+        contract = new ethers.Contract(checksummedTokenAddress, erc20Abi, this.provider);
+      } catch (checksumError) {
+        // If checksumming fails, use address as-is
+        this.logger.warn(`Checksum failed, using token address as-is: ${checksumError.message}`);
+        contract = new ethers.Contract(tokenAddress, erc20Abi, this.provider);
+      }
+
+      // Get balance - try with checksummed wallet address first
+      let balance;
+      try {
+        const checksummedWalletAddress = ethers.getAddress(walletAddress);
+        balance = await contract.balanceOf(checksummedWalletAddress);
+      } catch {
+        // Fallback to original address
+        balance = await contract.balanceOf(walletAddress);
+      }
+      
+      const balanceString = balance.toString();
+      this.logger.log(`✅ Token balance retrieved: ${balanceString}`);
+      return balanceString;
+    } catch (error: any) {
+      this.logger.error(`❌ Error getting token balance for ${walletAddress} on ${tokenAddress}: ${error.message}`);
+      if (error.code) {
+        this.logger.error(`Error code: ${error.code}`);
+      }
+      if (error.data) {
+        this.logger.error(`Error data: ${error.data}`);
+      }
+      if (error.reason) {
+        this.logger.error(`Error reason: ${error.reason}`);
+      }
+      // Return '0' instead of throwing to prevent breaking the API
+      return '0';
+    }
+  }
+
+  async getTokenDecimals(tokenAddress: string): Promise<number> {
+    try {
+      const erc20Abi = ['function decimals() view returns (uint8)'];
+      const contract = new ethers.Contract(tokenAddress, erc20Abi, this.provider);
+      const decimals = await contract.decimals();
+      return decimals;
+    } catch (error) {
+      this.logger.warn(`Error getting decimals for token ${tokenAddress}, defaulting to 6 (USDC): ${error.message}`);
+      return 6; // USDC default decimals
+    }
+  }
 }

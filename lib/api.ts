@@ -22,6 +22,10 @@ export interface WalletOverview {
   status: string;
   recentTransactions: any[];
   activityData: any[];
+  balance?: {
+    native: string;
+    usdc: string;
+  };
 }
 
 export interface Transaction {

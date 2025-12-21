@@ -1,11 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { RpcService } from '../rpc/rpc.service';
 
 @Injectable()
 export class MetricsService {
   private readonly logger = new Logger(MetricsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private rpcService: RpcService,
+    private configService: ConfigService,
+  ) {}
 
   async getWalletOverview(walletAddress: string) {
     const address = walletAddress.toLowerCase();
@@ -66,6 +72,36 @@ export class MetricsService {
       where: { walletAddress: address },
     });
 
+    // Get native balance from blockchain (use original address, not lowercase)
+    let nativeBalance = '0';
+    try {
+      nativeBalance = await this.rpcService.getBalance(walletAddress);
+      this.logger.log(`Native balance for ${walletAddress}: ${nativeBalance}`);
+    } catch (error) {
+      this.logger.warn(`Failed to get native balance for ${walletAddress}: ${error.message}`);
+    }
+
+    // Get USDC balance from contract
+    let usdcBalance = '0';
+    const usdcContractAddress = this.configService.get<string>('USDC_CONTRACT_ADDRESS');
+    this.logger.log(`Checking USDC balance - Contract: ${usdcContractAddress}, Wallet: ${walletAddress}`);
+    
+    if (usdcContractAddress && usdcContractAddress !== '0x0000000000000000000000000000000000000000') {
+      try {
+        usdcBalance = await this.rpcService.getTokenBalance(usdcContractAddress, walletAddress);
+        this.logger.log(`✅ USDC balance for ${walletAddress}: ${usdcBalance} (raw)`);
+        
+        // Convert to readable format for logging
+        const usdcAmount = Number(usdcBalance) / 1e6;
+        this.logger.log(`✅ USDC balance formatted: ${usdcAmount.toFixed(2)} USDC`);
+      } catch (error) {
+        this.logger.error(`❌ Failed to get USDC balance for ${walletAddress}: ${error.message}`);
+        this.logger.error(`Error stack: ${error.stack}`);
+      }
+    } else {
+      this.logger.warn(`⚠️ USDC_CONTRACT_ADDRESS not configured or invalid: ${usdcContractAddress}`);
+    }
+
     return {
       address: wallet.address,
       arcScore: wallet.arcScore || 0,
@@ -78,6 +114,10 @@ export class MetricsService {
       status: wallet.status || 'active',
       recentTransactions: wallet.transactions.slice(0, 10),
       activityData: wallet.dailyActivities,
+      balance: {
+        native: nativeBalance,
+        usdc: usdcBalance,
+      },
     };
   }
 

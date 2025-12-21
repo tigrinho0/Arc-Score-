@@ -37,9 +37,9 @@ export default function Home() {
                 )}
                 {walletError && (
                   <div className="rounded-3xl border border-destructive/40 bg-destructive/10 text-destructive p-6">
-                    <p className="font-semibold mb-2">Erro ao carregar dados da carteira</p>
+                    <p className="font-semibold mb-2">Error loading wallet data</p>
                     <p className="text-sm">{walletError}</p>
-                    <p className="text-xs mt-2 text-muted-foreground">Verifique se o backend está rodando em http://localhost:3001</p>
+                    <p className="text-xs mt-2 text-muted-foreground">Make sure the backend is running at http://localhost:3001</p>
                   </div>
                 )}
                 {!walletLoading && !walletError && walletData && <ArcScoreHero data={walletData} />}

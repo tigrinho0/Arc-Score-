@@ -22,6 +22,8 @@ export function useWalletData(address: string | null) {
         const result = await api.getWalletOverview(address);
         console.log('Wallet data received:', result);
         console.log('ArcScore:', result?.arcScore);
+        console.log('Balance:', result?.balance);
+        console.log('USDC Balance (raw):', result?.balance?.usdc);
         
         // Ensure arcScore is a number
         if (result) {
