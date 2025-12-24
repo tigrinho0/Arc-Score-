@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model NetworkStats {
+  id                        String   @id @default("1")
+  totalWallets              Int      @default(0)
+  totalTransactions         String   @default("0")
+  totalActiveWallets        Int      @default(0)
+  avgTransactionsPerWallet  Float    @default(0)
+  medianTransactionsPerWallet Float  @default(0)
+  lastProcessedBlock        String   @default("0")
+  lastUpdated               DateTime @default(now()) @updatedAt
+}
+
+model IndexerState {
+  id            String    @id @default("1")
+  lastBlockNumber String?
+  lastBlockHash  String?
+  lastRunAt      DateTime?
+  isRunning      Boolean   @default(false)
+  errorMessage   String?
+}
+
+model Wallet {
+  address          String    @id
+  firstSeenAt      DateTime
+  lastSeenAt       DateTime
+  arcScore         Float     @default(0)
+  rank             Int?
+  percentile       Float?
+  totalTransactions Int      @default(0)
+  activeDays       Int       @default(0)
+  status           String?
+  
+  transactions     Transaction[]
+  dailyActivities  DailyActivity[]
+  
+  @@index([arcScore])
+  @@index([rank])
+}
+
+model Transaction {
+  hash              String   @id
+  blockNumber       String
+  blockHash         String
+  from              String
+  to                String?
+  value             String
+  gasUsed           String
+  gasPrice          String
+  timestamp         DateTime
+  transactionIndex  Int
+  status            Int
+  isContractCreation Boolean @default(false)
+  contractAddress   String?
+  
+  wallet            Wallet   @relation(fields: [from], references: [address])
+  
+  @@index([from])
+  @@index([blockNumber])
+  @@index([timestamp])
+}
+
+model DailyActivity {
+  walletAddress     String
+  date              DateTime
+  transactionCount  Int       @default(0)
+  
+  wallet            Wallet    @relation(fields: [walletAddress], references: [address])
+  
+  @@unique([walletAddress, date], name: "walletAddress_date")
+  @@index([walletAddress])
+  @@index([date])
+}
+
